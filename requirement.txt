@@ -1,0 +1,8 @@
+pandas
+PyPDF2 #for parsing PDF
+langgraph
+langchain-openai
+langchain-core
+langchain-experimental
+pydantic
+python-dotenv
