@@ -6,3 +6,9 @@ langchain-core
 langchain-experimental
 pydantic
 python-dotenv
+uvicorn
+fastapi
+fastapi.responses
+streamlit
+asyncio
+requests

@@ -1,3 +1,4 @@
+from nt import truncate
 import random
 import pandas as pd
 from state import FinancialAnalysis, LoanState, ExtractedBankData, UnderwritingDecision, UserData
@@ -9,9 +10,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 #ingestion_llm = ChatGoogleGenerativeAI(model="gemini-3-pro-preview")
-struct_Ingestion_llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(ExtractedBankData)
+struct_Ingestion_llm = ChatOpenAI(model="gpt-5-nano").with_structured_output(ExtractedBankData)
 struct_fin_analysis_llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(FinancialAnalysis)
-struct_risk_assess_llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(UnderwritingDecision)
+struct_risk_assess_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, max_completion_tokens=500).with_structured_output(UnderwritingDecision)
+
+#Start Node
+def start_state_node(state: LoanState):
+    print("--- 🧹 Clearing State for New Run ---")
+    return state
+
 
 #Extract Information from Bank Statement
 def extract_text_from_file(file_path: str) -> str:
@@ -25,7 +32,6 @@ def extract_text_from_file(file_path: str) -> str:
     else:
         return ""
 
-
 def ingestion_agent(state: LoanState):
     print("--- Ingesting Data ---")
     
@@ -38,28 +44,21 @@ def ingestion_agent(state: LoanState):
 
     # 1. Read & Parse Information
     raw_content = extract_text_from_file(file_path)
-            
+    print ("In INgestion: ", raw_content)
     # 2. Use LLM to extract/validate relevant info (Income, Balance, Transactions)
-    system_message = """
-    You are a Financial Ingestion Agent. Extract the following from this bank statement text:
-    - Monthly Income
-    - Total Expenses
-    - Current Balance
-    
-    Raw Content: {raw_content}
-    
+    system_message = f"""
+    Act as an Financial Expert in reading Bank Statements efficiently. 
+    Extract Monthly Income, Total Expense, and Current Balance from Raw Content {raw_content} only, 
+    use the data from the raw content.
     If the Raw Content is not a bank statement or is missing this info, reply with 'FAILURE'.
-    Otherwise, reply with 'SUCCESS' followed by the data in the following format:
-    {
-        "income": <monthly income>,
-        "expenses": <total expenses>,
-        "balance": <current balance>
-    }
+    Otherwise, reply with 'SUCCESS'. Along with the Extraction Information. 
+    Response to be provided in the format specified.
     """
+    
     try:
         # We use .invoke() here to trigger the LLM
         extraction = struct_Ingestion_llm.invoke(system_message) # Can use Truncate to save tokens
-        
+        print("Ingestion Agent : ", extraction)
         if extraction.is_valid_statement:
             # Update the existing user_data with the new extracted keys
             updated_user_data = {
@@ -80,7 +79,6 @@ def ingestion_agent(state: LoanState):
     except Exception as e:
         print(f"Extraction Error: {e}")
         return {"status_message": "Invalid Format"}
-
 
 def user_feedback_node(state: LoanState):
     print("--- User Feedback: Error & Retry ---")
@@ -104,12 +102,12 @@ def financial_analyst_agent(state: LoanState):
     system_promt = f"""
     You are a Senior Financial Analyst for loan approval. Analyze the user data {state['user_data']} &  
     {state['raw_financial_text']} for the following:
-    - Monthly Income
+    - Monthly Salary
     - Total Expenses
     - Requested Loan
 
     Tasks:
-    1. Calculate the DTI (Debt-to-Income) ratio strictly as (Expenses / Income).
+    1. Calculate the DTI (Debt-to-Income) ratio strictly as (Expenses / Salary).
     2. Assess if the user's spending is sustainable.
     3. Categorize the user based on the DTI: 
        - DTI < 0.4: Stable
@@ -144,8 +142,9 @@ def risk_underwriter_agent(state: LoanState):
     You are a Bank Risk Underwriter for Loan Sanction. Evaluate this loan application based on these internal policies:   
     POLICY:
     - If DTI > 0.6: Flag for Review or Reject.
-    - If Category is 'Stable' and DTI < 0.4: Proceed.
+    - If Financial Category is 'Stable' and DTI < 0.4: Proceed.
     - If the Loan Amount is > $50,000 and Category is 'Moderate', always 'Flag for Review'.
+    - Go trough the Raw Statement and check for the irregularities in the transactions.
 
     APPLICATION DATA:
     - Debt-to-Income Ratio: {dti}
@@ -153,7 +152,6 @@ def risk_underwriter_agent(state: LoanState):
     - Requested Amount: {requested_amt}
     - Raw Statement: {raw_statement}
 
-    Go trough the Raw Statement and check of the irregularities in the transactions.
     Determine if we should Proceed, Reject, or if there are irregularities requiring 'Flag for Review'.
     """
 
@@ -167,7 +165,6 @@ def risk_underwriter_agent(state: LoanState):
         "reasoning": f"Underwriting Complete: {decision_data.summary}",
         "status_message": decision_data.decision
     }
-
 
 def manual_review_node(state: LoanState):
     print("--- Human-in-the-Loop: Manual Review ---")

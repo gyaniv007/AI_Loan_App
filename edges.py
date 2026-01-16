@@ -28,9 +28,9 @@ def route_final_decision(state: LoanState):
     - Uncertain -> Conditional Approval
     """
     dti = state.get("dti_ratio", 1.0)
-    stable = state.get("is_stable", False)
+    irr_found = state.get("irregularities_found", False)
 
-    if dti <= 0.40 and stable:
+    if dti <= 0.40 and not irr_found:
         return "sanctioned"
     elif dti > 0.60: # Example logic for 'No'
         return "not_sanctioned"
