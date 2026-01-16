@@ -1,5 +1,6 @@
 import os
 from langgraph.graph import StateGraph, END
+import uuid
 
 # Import local modules based on our folder structure
 from state import LoanState
@@ -13,6 +14,7 @@ def build_loan_graph():
     workflow = StateGraph(LoanState)
 
     # 2. Add Nodes (The "Boxes" in your image)
+    workflow.add_node("start_state_node", nodes.start_state_node)
     workflow.add_node("ingestion_agent", nodes.ingestion_agent)
     workflow.add_node("user_feedback", nodes.user_feedback_node)
     workflow.add_node("financial_analyst", nodes.financial_analyst_agent)
@@ -26,7 +28,8 @@ def build_loan_graph():
     # 3. Define the Flow (Edges)
     
     # Entry point
-    workflow.set_entry_point("ingestion_agent")
+    workflow.set_entry_point("start_state_node")
+
 
     # Edge: Ingestion -> Feedback OR Analyst
     workflow.add_conditional_edges(
@@ -39,6 +42,7 @@ def build_loan_graph():
     )
 
     # Standard Edges
+    workflow.add_edge("start_state_node", "ingestion_agent")
     workflow.add_edge("user_feedback", END)
     workflow.add_edge("financial_analyst", "risk_underwriter")
 
@@ -74,10 +78,15 @@ def build_loan_graph():
     # 4. Compile the Graph
     return workflow.compile()
 
+
+loan_app = build_loan_graph()
+
+"""
 if __name__ == "__main__":
     # Create the executable app
     app = build_loan_graph()
 
+    #Create the LangGraph Flow Diagram
     png_bytes = app.get_graph().draw_mermaid_png(
         draw_method=MermaidDrawMethod.API,
     )
@@ -87,16 +96,21 @@ if __name__ == "__main__":
     
     # Initial state to simulate a loan application
     initial_input = {
-        "user_data": {"name": "Mr.Jack", "requested_amount": 500000},
+        "user_data": {"name": "Mr.Jack", "requested_amount": 50000},
         "status_message": "",
     }
 
     print("--- Starting Loan Sanction Process ---\n")
     
+    #config = {"configurable": {"thread_id": str(uuid.uuid4()) } }
+    #final_outcome = app.invoke(initial_input, config=config)
+
+
     # Run the graph and stream the steps
 
     for output in app.stream(initial_input):
         for key, value in output.items():
             print(f"Node '{key}' completed.")
             if "final_decision" in value:
-                print(f"FINAL RESULT: {value['final_decision']}")
+                print(f"FINAL RESULT: {value['final_decision']}") 
+"""

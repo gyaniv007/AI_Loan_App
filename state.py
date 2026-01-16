@@ -10,18 +10,19 @@ class UnderwritingDecision(BaseModel):
 
 # Schema for the Analyst's output
 class FinancialAnalysis(BaseModel):
-    dti_ratio: float = Field(description="Debt-to-Income ratio calculated as total_expenses / monthly_income")
+    dti_ratio: float = Field(description="Debt-to-Income ratio calculated as total expenses / monthly income")
     financial_category: str = Field(description="Categorize as 'Stable', 'High Risk', or 'Moderate'")
     reasoning: str = Field(description="Brief explanation of the financial health assessment")
 
 # Schema for the Ingestion Agents's Output
 class ExtractedBankData(BaseModel):
-    monthly_income: float = Field(description="Total income per month")
-    total_expenses: float = Field(description="Total expenses per month")
+    monthly_income: float = Field(description="Extract the transaction which mentions Deposit")
+    total_expenses: float = Field(description="Add all the expenses from the Bank Statement")
     current_balance: float = Field(description="The ending balance on the statement")
-    is_valid_statement: bool = Field(description="True if the Content is a valid bank statement")
+    is_valid_statement: bool = Field(description="True if the Raw Content is a valid bank statement")
 
 class UserData(TypedDict):
+    name: Optional[str]
     email: Optional[str]
     mobile: Optional[str]
     requested_amount: float
