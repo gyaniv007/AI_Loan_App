@@ -21,7 +21,7 @@ def route_after_risk_underwriter(state: LoanState):
 
 def route_final_decision(state: LoanState):
     """
-    Corresponds to 'Conditional Edge: DTI <= 40% & Stable?'.
+    Corresponds to 'Conditional Edge: DTI <= 40% & irregularity found?'.
     Logic:
     - Yes -> Sanctioned
     - No -> Not Sanctioned
@@ -30,7 +30,7 @@ def route_final_decision(state: LoanState):
     dti = state.get("dti_ratio", 1.0)
     irr_found = state.get("irregularities_found", False)
 
-    if dti <= 0.40 and not irr_found:
+    if dti <= 0.40:
         return "sanctioned"
     elif dti > 0.60: # Example logic for 'No'
         return "not_sanctioned"

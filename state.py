@@ -16,8 +16,8 @@ class FinancialAnalysis(BaseModel):
 
 # Schema for the Ingestion Agents's Output
 class ExtractedBankData(BaseModel):
-    monthly_income: float = Field(description="Extract the transaction which mentions Deposit")
-    total_expenses: float = Field(description="Add all the expenses from the Bank Statement")
+    monthly_income: float = Field(description="Extract the transaction which mentions Monthly Salary")
+    total_expenses: float = Field(description="Add all the expenses from the Bank Statement related to livelyhood and and office work")
     current_balance: float = Field(description="The ending balance on the statement")
     is_valid_statement: bool = Field(description="True if the Raw Content is a valid bank statement")
 

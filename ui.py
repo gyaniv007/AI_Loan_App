@@ -36,12 +36,21 @@ if st.button("Submit Application"):
                 st.write(f"**Risk Category:** {result.get('financial_category')}")
                 #st.write(f"Result : ", result)
                 
-                if result.get("irregularities_found"):
-                    st.warning("⚠️ Irregularity Found. This application has been flagged for Manual Review.")
-                else:
-                    st.balloons()
-                    st.info("✅ Application processed successfully.")
+                match result.get('final_decision'):
+                    case "Approved":
+                        st.balloons()
+                        st.info("✅ Congratulations! Loan Sanctioned.")
+                       
+                    case "Rejected":
+                        st.warning("❌ We regret to inform Loan NOT Sanctioned.")
+
+                    case "Conditional":
+                        st.warning(f"⚠️ Conditonal Approval. This application has been flagged for Manual Review.")
+                    
+                    case "Manual Review":
+                        st.warning("⚠️ Irregularity Found: {result.get('irregularities_found')}. This application has been flagged for Manual Review.")
+
             else:
-                st.error("Error processing application.")
+                    st.error("Error processing application.")
     else:
         st.error("Please fill in all fields and upload a file.")

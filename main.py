@@ -56,9 +56,6 @@ def build_loan_graph():
         }
     )
 
-    # Manual Review State Update back to Orchestrator
-    workflow.add_edge("manual_review", "orchestrator")
-
     # Final Decision Edge: Orchestrator -> Result Nodes
     workflow.add_conditional_edges(
         "orchestrator",
@@ -74,6 +71,7 @@ def build_loan_graph():
     workflow.add_edge("sanctioned", END)
     workflow.add_edge("not_sanctioned", END)
     workflow.add_edge("conditional_approval", END)
+    workflow.add_edge("manual_review", END)
 
     # 4. Compile the Graph
     return workflow.compile()

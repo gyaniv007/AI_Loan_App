@@ -36,8 +36,9 @@ def ingestion_agent(state: LoanState):
     print("--- Ingesting Data ---")
     
     #Tie this to File to UI File Upload App
-    #file_path = state.get("user_data", {}).get("file_path")
-    file_path = "bank_statement.csv"
+    file_path = state.get("user_data", {}).get("file_path")
+    print("Bank Statement File Path : ", file_path)
+    #file_path = "bank_statement.csv"
 
     if not file_path:
         return {"status_message": "Invalid Format", "user_data": state["user_data"]}
@@ -50,6 +51,7 @@ def ingestion_agent(state: LoanState):
     Act as an Financial Expert in reading Bank Statements efficiently. 
     Extract Monthly Income, Total Expense, and Current Balance from Raw Content {raw_content} only, 
     use the data from the raw content.
+    For Total Expenses, add only the expenses related to livelyhood and office work related withdrawals.
     If the Raw Content is not a bank statement or is missing this info, reply with 'FAILURE'.
     Otherwise, reply with 'SUCCESS'. Along with the Extraction Information. 
     Response to be provided in the format specified.
@@ -144,7 +146,7 @@ def risk_underwriter_agent(state: LoanState):
     - If DTI > 0.6: Flag for Review or Reject.
     - If Financial Category is 'Stable' and DTI < 0.4: Proceed.
     - If the Loan Amount is > $50,000 and Category is 'Moderate', always 'Flag for Review'.
-    - Go trough the Raw Statement and check for the irregularities in the transactions.
+    - Go trough the Raw Statement and check for the irregularities in the transactions like anamoly in Withdrawals or Deposits
 
     APPLICATION DATA:
     - Debt-to-Income Ratio: {dti}
@@ -152,7 +154,8 @@ def risk_underwriter_agent(state: LoanState):
     - Requested Amount: {requested_amt}
     - Raw Statement: {raw_statement}
 
-    Determine if we should Proceed, Reject, or if there are irregularities requiring 'Flag for Review'.
+    Determine if we should Proceed, Reject, or if there are irregularities requiring 'Flag for Manual Review'.
+    Give the underwriting reasoning summary in a crisp 4 line statement only.
     """
 
     # 4. Invoke LLM
@@ -161,7 +164,7 @@ def risk_underwriter_agent(state: LoanState):
     # 5. Update State
     # Note: 'irregularities_found' triggers the conditional edge to Manual Review
     return {
-        "irregularities_found": decision_data.irregularities_found or (decision_data.decision == "Flag for Review"),
+        "irregularities_found": decision_data.irregularities_found,
         "reasoning": f"Underwriting Complete: {decision_data.summary}",
         "status_message": decision_data.decision
     }
@@ -169,7 +172,7 @@ def risk_underwriter_agent(state: LoanState):
 def manual_review_node(state: LoanState):
     print("--- Human-in-the-Loop: Manual Review ---")
     # Logic for officer to override
-    return {"status_message": "Manual Review Completed"}
+    return {"status_message": "Manual Review Completed", "final_decision": "Manual Review"}
 
 def decision_orchestrator(state: LoanState):
     print("--- Decision Orchestration ---")
